@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpaceScan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f4f2;
+  --surface:#ffffff;
+  --border:#e0e0de;
+  --border-2:#c4c4c2;
+  --text:#111110;
+  --text-2:#5a5a58;
+  --text-3:#9a9a98;
+  --accent:#111110;
+  --fg:#ffffff;
+  --r:8px;
+  --r-sm:5px;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --cat-furniture:#eef2ff;
+  --cat-furniture-t:#3730a3;
+  --cat-furniture-b:#6366f1;
+  --cat-lighting:#fffbeb;
+  --cat-lighting-t:#92400e;
+  --cat-lighting-b:#f59e0b;
+  --cat-deco:#f0fdf4;
+  --cat-deco-t:#14532d;
+  --cat-deco-b:#22c55e;
+  --cat-textile:#fdf4ff;
+  --cat-textile-t:#581c87;
+  --cat-textile-b:#a855f7;
+  --cat-appliance:#f0f9ff;
+  --cat-appliance-t:#0c4a6e;
+  --cat-appliance-b:#0ea5e9;
+  --cat-etc:#f9fafb;
+  --cat-etc-t:#374151;
+  --cat-etc-b:#9ca3af;
+}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* HEADER */
+#hdr{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  height:48px;padding:0 20px;
+  background:rgba(244,244,242,.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.logo{font-family:var(--mono);font-size:13px;letter-spacing:.1em;font-weight:400;user-select:none}
+.logo span{color:var(--text-3)}
+.hdr-right{display:flex;gap:6px;align-items:center}
+.ico-btn{
+  display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface);cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.ico-btn:hover{border-color:var(--border-2);background:var(--bg)}
+.ico-btn svg{width:14px;height:14px;stroke:var(--text-2);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* SETTINGS DRAWER */
+#settings{overflow:hidden;max-height:0;transition:max-height .28s ease;border-bottom:1px solid transparent}
+#settings.open{max-height:60px;border-bottom-color:var(--border)}
+.settings-row{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surface)}
+.s-label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.s-input{
+  flex:1;max-width:380px;height:30px;padding:0 10px;
+  font-family:var(--mono);font-size:11px;color:var(--text);
+  border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);outline:none;
+  transition:border-color .15s;
+}
+.s-input:focus{border-color:var(--border-2)}
+.s-save{
+  height:30px;padding:0 12px;font-family:var(--sans);font-size:12px;font-weight:500;
+  background:var(--accent);color:var(--fg);border:none;border-radius:var(--r-sm);cursor:pointer;
+  transition:opacity .15s;
+}
+.s-save:hover{opacity:.75}
+.s-help{font-size:11px;color:var(--text-3)}
+.s-help a{color:var(--text-2);text-underline-offset:2px}
+
+/* MAIN */
+#main{flex:1;max-width:1120px;width:100%;margin:0 auto;padding:40px 20px}
+
+/* UPLOAD */
+#view-upload{display:flex;flex-direction:column;align-items:center;gap:0}
+.drop-zone{
+  width:100%;max-width:520px;
+  background:var(--surface);border:1px dashed var(--border-2);border-radius:var(--r);
+  padding:56px 40px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  cursor:pointer;position:relative;
+  transition:border-color .15s,background .15s;
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--text);background:var(--bg)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-icon{
+  width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:var(--r);background:var(--bg);
+}
+.drop-icon svg{width:20px;height:20px;stroke:var(--text-2);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.drop-title{font-size:15px;font-weight:500;color:var(--text)}
+.drop-sub{font-size:12px;color:var(--text-3);text-align:center;line-height:1.7}
+.tag-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  padding:3px 8px;border:1px solid var(--border);border-radius:3px;
+  color:var(--text-3);background:var(--surface);
+}
+
+/* ERROR */
+.err{
+  max-width:520px;width:100%;margin-top:16px;
+  padding:12px 16px;border:1px solid #fca5a5;border-radius:var(--r);
+  background:#fff5f5;font-size:12px;color:#7f1d1d;line-height:1.6;
+  display:none;
+}
+.err.show{display:block}
+
+/* LOADING */
+#view-load{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:20px}
+#view-load.on{display:flex}
+.load-thumb{width:160px;height:110px;object-fit:cover;border-radius:var(--r);border:1px solid var(--border);filter:grayscale(.4);opacity:.8}
+.load-track{width:180px;height:1px;background:var(--border);border-radius:1px;overflow:hidden;position:relative}
+.load-fill{height:100%;width:0;background:var(--text);border-radius:1px;transition:width 2.8s cubic-bezier(.4,0,.2,1)}
+.load-txt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.dots::after{content:'';animation:dots 1.4s steps(4,end) infinite}
+@keyframes dots{0%,100%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+
+/* RESULTS */
+#view-results{display:none;grid-template-columns:300px 1fr;gap:28px;align-items:start}
+#view-results.on{display:grid}
+@media(max-width:720px){#view-results.on{grid-template-columns:1fr;display:flex;flex-direction:column}}
+
+/* LEFT PANEL */
+.left-panel{position:sticky;top:64px;display:flex;flex-direction:column;gap:12px}
+.result-photo{width:100%;border-radius:var(--r);border:1px solid var(--border);display:block}
+.photo-meta{display:flex;flex-direction:column;gap:4px}
+.meta-label{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.meta-value{font-size:14px;font-weight:500;color:var(--text)}
+.divider{height:1px;background:var(--border)}
+.stat-row{display:flex;justify-content:space-between;align-items:center}
+.stat-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--text-3);text-transform:uppercase}
+.stat-val{font-family:var(--mono);font-size:12px;color:var(--text);font-weight:400}
+.btn-reset{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;height:32px;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface);font-family:var(--sans);font-size:12px;color:var(--text-2);
+  cursor:pointer;transition:border-color .15s;
+}
+.btn-reset:hover{border-color:var(--border-2)}
+.btn-reset svg{width:12px;height:12px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* RIGHT PANEL */
+.right-panel{display:flex;flex-direction:column;gap:16px}
+.results-hdr{display:flex;align-items:baseline;justify-content:space-between}
+.results-title{font-size:18px;font-weight:500}
+.results-meta{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--text-3)}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px}
+
+/* PRODUCT CARD */
+.pcard{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;cursor:pointer;position:relative;
+  transition:border-color .15s,transform .18s,box-shadow .18s;
+}
+.pcard:hover{border-color:var(--border-2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.07)}
+.pcard-bar{height:3px;width:100%}
+.pcard-visual{
+  height:100px;display:flex;align-items:center;justify-content:center;
+  border-bottom:1px solid var(--border);
+}
+.pcard-ico{
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);
+}
+.pcard-ico svg{width:18px;height:18px;stroke:var(--text-2);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pcard-body{padding:12px}
+.pcard-cat{
+  display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;
+  text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-bottom:6px;
+}
+.pcard-name{font-size:13px;font-weight:500;line-height:1.4;margin-bottom:5px;color:var(--text)}
+.pcard-desc{font-size:11px;color:var(--text-2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.conf-dot{position:absolute;top:10px;right:10px;width:5px;height:5px;border-radius:50%}
+.conf-high{background:#4ade80}
+.conf-medium{background:#fbbf24}
+.conf-low{background:#d1d5db}
+
+/* CATEGORY SYSTEM */
+.cat-가구   {background:var(--cat-furniture);color:var(--cat-furniture-t)}
+.bar-가구   {background:var(--cat-furniture-b)}
+.bg-가구    {background:rgba(238,242,255,.5)}
+.cat-조명   {background:var(--cat-lighting);color:var(--cat-lighting-t)}
+.bar-조명   {background:var(--cat-lighting-b)}
+.bg-조명    {background:rgba(255,251,235,.5)}
+.cat-소품   {background:var(--cat-deco);color:var(--cat-deco-t)}
+.bar-소품   {background:var(--cat-deco-b)}
+.bg-소품    {background:rgba(240,253,244,.5)}
+.cat-섬유   {background:var(--cat-textile);color:var(--cat-textile-t)}
+.bar-섬유   {background:var(--cat-textile-b)}
+.bg-섬유    {background:rgba(253,244,255,.5)}
+.cat-가전   {background:var(--cat-appliance);color:var(--cat-appliance-t)}
+.bar-가전   {background:var(--cat-appliance-b)}
+.bg-가전    {background:rgba(240,249,255,.5)}
+.cat-기타   {background:var(--cat-etc);color:var(--cat-etc-t)}
+.bar-기타   {background:var(--cat-etc-b)}
+.bg-기타    {background:var(--cat-etc)}
+
+/* MODAL */
+#modal-wrap{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(17,17,16,.35);backdrop-filter:blur(4px)}
+#modal-wrap.on{display:flex}
+#modal{
+  width:100%;max-width:460px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  animation:modal-pop .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modal-pop{from{opacity:0;transform:scale(.95) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-bar{height:3px}
+.modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 22px 0}
+.modal-title-area{flex:1;min-width:0}
+.modal-cat-label{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
+.modal-name{font-size:20px;font-weight:500;line-height:1.25;color:var(--text)}
+.modal-x{
+  width:26px;height:26px;flex-shrink:0;margin-left:12px;
+  border:1px solid var(--border);border-radius:var(--r-sm);background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:border-color .15s;
+}
+.modal-x:hover{border-color:var(--border-2)}
+.modal-x svg{width:10px;height:10px;stroke:var(--text-2);stroke-width:1.5;fill:none;stroke-linecap:round}
+.modal-body{padding:18px 22px 22px;display:flex;flex-direction:column;gap:16px}
+.modal-desc{font-size:13px;color:var(--text-2);line-height:1.75;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.modal-stat{padding:10px 12px;border-right:1px solid var(--border)}
+.modal-stat:last-child{border-right:none}
+.modal-stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:4px}
+.modal-stat-val{font-size:12px;font-weight:500;color:var(--text)}
+.modal-actions{display:flex;gap:8px}
+.btn-primary{
+  flex:1;height:36px;display:flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--accent);color:var(--fg);border:none;border-radius:var(--r-sm);
+  font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s;
+}
+.btn-primary:hover{opacity:.75}
+.btn-primary svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.btn-secondary{
+  height:36px;padding:0 14px;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  background:none;font-family:var(--sans);font-size:12px;color:var(--text-2);cursor:pointer;transition:border-color .15s;
+}
+.btn-secondary:hover{border-color:var(--border-2)}
+
+/* EMPTY STATE */
+.empty{
+  grid-column:1/-1;
+  padding:40px 20px;text-align:center;
+  font-size:13px;color:var(--text-3);line-height:1.7;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="hdr">
+  <span class="logo">Space<span>Scan</span></span>
+  <div class="hdr-right">
+    <button class="ico-btn" id="btn-settings" title="API 키 설정">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- SETTINGS DRAWER -->
+<div id="settings">
+  <div class="settings-row">
+    <span class="s-label">API Key</span>
+    <input type="password" class="s-input" id="api-input" placeholder="sk-ant-api03-...">
+    <button class="s-save" id="btn-save-key">저장</button>
+    <span class="s-help"><a href="https://console.anthropic.com/settings/keys" target="_blank">키 발급 →</a></span>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- UPLOAD VIEW -->
+  <div id="view-upload">
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" accept="image/*" id="file-input">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </div>
+      <div class="drop-title">공간 사진 업로드</div>
+      <div class="drop-sub">드래그하거나 클릭해서 선택<br>JPG · PNG · WEBP · HEIC</div>
+    </div>
+    <div class="tag-row">
+      <span class="tag">AI 인식</span>
+      <span class="tag">제품 탐지</span>
+      <span class="tag">카드 뷰</span>
+      <span class="tag">검색 연동</span>
+    </div>
+    <div class="err" id="err-box"></div>
+  </div>
+
+  <!-- LOADING VIEW -->
+  <div id="view-load">
+    <img class="load-thumb" id="load-preview" src="" alt="">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
+      <div class="load-txt">공간 분석 중<span class="dots"></span></div>
+    </div>
+  </div>
+
+  <!-- RESULTS VIEW -->
+  <div id="view-results">
+
+    <!-- LEFT -->
+    <div class="left-panel">
+      <img class="result-photo" id="result-img" src="" alt="">
+      <div class="photo-meta">
+        <div class="meta-label">공간 유형</div>
+        <div class="meta-value" id="space-type">—</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-row">
+        <span class="stat-lbl">발견 제품</span>
+        <span class="stat-val" id="stat-count">0개</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-lbl">분석 시간</span>
+        <span class="stat-val" id="stat-time">—</span>
+      </div>
+      <button class="btn-reset" id="btn-reset">
+        <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+        새로 분석하기
+      </button>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-panel">
+      <div class="results-hdr">
+        <div class="results-title">제품 목록</div>
+        <span class="results-meta" id="results-meta"></span>
+      </div>
+      <div class="cards-grid" id="cards-grid"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- MODAL -->
+<div id="modal-wrap">
+  <div id="modal">
+    <div class="modal-bar" id="modal-bar"></div>
+    <div class="modal-hdr">
+      <div class="modal-title-area">
+        <div class="modal-cat-label" id="modal-cat"></div>
+        <div class="modal-name" id="modal-name"></div>
+      </div>
+      <button class="modal-x" id="modal-close">
+        <svg viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc" id="modal-desc"></div>
+      <div class="modal-grid">
+        <div class="modal-stat">
+          <div class="modal-stat-lbl">카테고리</div>
+          <div class="modal-stat-val" id="m-cat"></div>
+        </div>
+        <div class="modal-stat">
+          <div class="modal-stat-lbl">신뢰도</div>
+          <div class="modal-stat-val" id="m-conf"></div>
+        </div>
+        <div class="modal-stat">
+          <div class="modal-stat-lbl">영문명</div>
+          <div class="modal-stat-val" id="m-en" style="font-size:11px;line-height:1.4"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btn-google">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          구글에서 찾기
+        </button>
+        <button class="btn-secondary" id="btn-naver">네이버 쇼핑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ICONS = {
+  '가구':'<svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="11" width="20" height="4" rx="1"/><path d="M4 15v4M20 15v4M5 11V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v4"/></svg>',
+  '조명':'<svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 5 11.9V16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-2.1A7 7 0 0 1 12 2z"/><path d="M9 21h6M10 17v-1M14 17v-1"/></svg>',
+  '소품':'<svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+  '섬유':'<svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6l3 9 3-9h6"/><path d="M3 21h18"/><path d="M3 9h18"/></svg>',
+  '가전':'<svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="16" y1="2" x2="16" y2="5"/><path d="M7 10h.01M7 14h.01M11 10h6"/></svg>',
+  '기타':'<svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+};
+const CONF = {high:'높음',medium:'보통',low:'낮음'};
+
+const $ = id => document.getElementById(id);
+
+let currentProduct = null;
+let scanStart = 0;
+
+function catKey(cat=''){
+  const map = ['가구','조명','소품','섬유','가전'];
+  return map.find(k => (cat||'').includes(k)) || '기타';
+}
+
+// SETTINGS
+$('btn-settings').onclick = () => $('settings').classList.toggle('open');
+$('btn-save-key').onclick = () => {
+  const k = $('api-input').value.trim();
+  if(k) localStorage.setItem('ss_key', k);
+  $('settings').classList.remove('open');
+};
+$('api-input').value = localStorage.getItem('ss_key') || '';
+
+// UPLOAD
+const dz = $('drop-zone');
+const fi = $('file-input');
+
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) processFile(f);
+});
+fi.onchange = e => { if(e.target.files[0]) processFile(e.target.files[0]); };
+
+$('btn-reset').onclick = () => {
+  showView('upload');
+  $('cards-grid').innerHTML = '';
+  fi.value = '';
+};
+
+// PROCESS
+function processFile(file) {
+  const key = localStorage.getItem('ss_key') || '';
+  if(!key) {
+    $('settings').classList.add('open');
+    showErr('먼저 Anthropic API 키를 입력해주세요.');
+    return;
+  }
+  hideErr();
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const dataUrl = e.target.result;
+    const b64 = dataUrl.split(',')[1];
+    const mime = file.type || 'image/jpeg';
+    showLoading(dataUrl);
+    scanStart = Date.now();
+    try {
+      const data = await callAPI(b64, mime, key);
+      showResults(dataUrl, data);
+    } catch(err) {
+      showView('upload');
+      showErr(err.message || '분석에 실패했습니다. API 키를 확인해주세요.');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function showLoading(preview) {
+  showView('load');
+  $('load-preview').src = preview;
+  const fill = $('load-fill');
+  fill.style.width = '0%';
+  setTimeout(() => { fill.style.width = '88%'; }, 60);
+}
+
+async function callAPI(b64, mime, key) {
+  const system = `You are a product recognition specialist. Analyze the interior/space image and identify all distinct visible products: furniture, lighting, decorative items, textiles, appliances, art, and design objects.
+
+Return ONLY a raw JSON object — no markdown fences, no explanation, nothing else:
+{
+  "spaceType": "공간 유형 (거실/주방/침실/사무실/욕실/다이닝/기타 중 하나)",
+  "products": [
+    {
+      "id": 1,
+      "name": "제품명 (한국어, 구체적으로)",
+      "nameEn": "Specific product name in English",
+      "category": "가구 또는 조명 또는 소품 또는 섬유 또는 가전 또는 기타",
+      "description": "한국어로 이 제품에 대한 설명 (1~2문장)",
+      "searchQuery": "best Google search query in English to find this product",
+      "confidence": "high 또는 medium 또는 low"
+    }
+  ]
+}
+
+Be thorough — identify every distinct item. Minimum 5 products if visible.`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-5',
+      max_tokens: 2048,
+      system,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },
+          { type: 'text', text: '이 공간에 있는 모든 제품을 분석해주세요.' }
+        ]
+      }]
+    })
+  });
+
+  if(!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || `오류 ${res.status}`);
+  }
+
+  const d = await res.json();
+  const raw = d.content[0].text.trim().replace(/```json|```/g,'').trim();
+  return JSON.parse(raw);
+}
+
+function showResults(imgSrc, data) {
+  $('result-img').src = imgSrc;
+  $('space-type').textContent = data.spaceType || '—';
+  const products = data.products || [];
+  $('stat-count').textContent = products.length + '개';
+  const elapsed = ((Date.now() - scanStart) / 1000).toFixed(1);
+  $('stat-time').textContent = elapsed + 's';
+  $('results-meta').textContent = products.length + '개 항목 발견';
+
+  const grid = $('cards-grid');
+  grid.innerHTML = '';
+  if(!products.length) {
+    grid.innerHTML = '<div class="empty">제품을 인식하지 못했습니다.<br>더 선명하거나 밝은 사진을 업로드해 보세요.</div>';
+  } else {
+    products.forEach((p, i) => {
+      const card = buildCard(p, i);
+      grid.appendChild(card);
+    });
+  }
+  showView('results');
+}
+
+function buildCard(p, idx) {
+  const ck = catKey(p.category);
+  const div = document.createElement('div');
+  div.className = 'pcard';
+  div.innerHTML = `
+    <div class="pcard-bar bar-${ck}"></div>
+    <div class="pcard-visual bg-${ck}">
+      <div class="pcard-ico">${ICONS[ck]}</div>
+    </div>
+    <div class="pcard-body">
+      <span class="pcard-cat cat-${ck}">${p.category || '기타'}</span>
+      <div class="pcard-name">${p.name}</div>
+      <div class="pcard-desc">${p.description || ''}</div>
+    </div>
+    <div class="conf-dot conf-${p.confidence||'low'}" title="신뢰도: ${CONF[p.confidence]||'낮음'}"></div>
+  `;
+  div.onclick = () => openModal(p, ck);
+  return div;
+}
+
+function openModal(p, ck) {
+  currentProduct = p;
+  const cat = p.category || '기타';
+  $('modal-bar').className = 'modal-bar bar-' + ck;
+  $('modal-cat').textContent = cat;
+  $('modal-cat').className = 'modal-cat-label cat-' + ck;
+  $('modal-name').textContent = p.name;
+  $('modal-desc').textContent = p.description || '';
+  $('m-cat').textContent = cat;
+  $('m-conf').textContent = CONF[p.confidence] || '—';
+  $('m-en').textContent = p.nameEn || '—';
+  $('modal-wrap').classList.add('on');
+}
+
+$('modal-close').onclick = closeModal;
+$('modal-wrap').onclick = e => { if(e.target === $('modal-wrap')) closeModal(); };
+function closeModal() { $('modal-wrap').classList.remove('on'); }
+
+$('btn-google').onclick = () => {
+  if(currentProduct) window.open('https://www.google.com/search?q=' + encodeURIComponent(currentProduct.searchQuery || currentProduct.nameEn), '_blank');
+};
+$('btn-naver').onclick = () => {
+  if(currentProduct) window.open('https://shopping.naver.com/search/all?query=' + encodeURIComponent(currentProduct.name), '_blank');
+};
+
+// VIEW SWITCHING
+function showView(name) {
+  $('view-upload').style.display = name==='upload' ? 'flex' : 'none';
+  $('view-load').classList.toggle('on', name==='load');
+  $('view-results').classList.toggle('on', name==='results');
+}
+
+function showErr(msg) { const e = $('err-box'); e.textContent = msg; e.classList.add('show'); }
+function hideErr() { $('err-box').classList.remove('show'); }
+
+// INIT
+showView('upload');
+</script>
+</body>
+</html>
